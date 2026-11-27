@@ -1,0 +1,41 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#e5cf9f"><title>정조의 화성 원행 · 창덕궁에서 화성까지</title><style>
+*{box-sizing:border-box}body{margin:0;background:#e6cda0;color:#30271b;font:16px/1.5 "Apple SD Gothic Neo",sans-serif}button,input,a{font:inherit;color:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #a22f19;outline-offset:4px}h1,h2,h3,p,figure{margin:0}h1,h2,h3{font-family:AppleMyungjo,"Nanum Myeongjo",serif;letter-spacing:-.055em}#stage{position:fixed;inset:0;overflow:hidden;touch-action:none;display:grid;align-content:center;background:linear-gradient(#e6d5ad,#d6bb87)}#paper{position:relative;width:100%;height:min(78dvh,48vw);background:url(scenes/route/route.webp) center/100% 100% no-repeat}canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}header{position:absolute;left:4vw;top:3.3vh;pointer-events:none;text-shadow:0 1px 3px #fff2cf,0 0 18px #f3e2bb}header p{font-size:13px;letter-spacing:.07em}h1{font-size:clamp(30px,4vw,67px);line-height:1.15;margin-top:5px}#rail{position:absolute;left:1vw;top:39%;height:19%;width:47px;display:flex;flex-direction:column;justify-content:space-between;color:#39291e;text-shadow:0 0 4px #fff}#rail:before{content:"";position:absolute;left:12px;top:10%;bottom:10%;width:1px;background:#684428}#rail button{position:relative;font-size:12px;padding:3px 0 3px 27px;background:transparent;border:0;text-shadow:inherit}#chair{position:absolute;width:24px;left:0;pointer-events:none;color:#923521;transform:translateY(-50%);filter:drop-shadow(0 0 2px #ffefce)}footer{position:absolute;bottom:3%;left:4vw;right:4vw;display:flex;align-items:end;justify-content:space-between;gap:20px;text-shadow:0 0 10px #ffedc8}footer label{display:block;font-size:13px}footer input{display:block;width:min(37vw,360px);accent-color:#94432d;cursor:ew-resize}#details{font-weight:700;background:#f3e6ccee;border:1px solid #54453188;border-radius:40px;padding:10px 18px}dialog{border:1px solid #a99c85;padding:0;width:min(820px,90vw);max-height:82dvh;background:#faf5e8;color:#322c24;border-radius:12px;box-shadow:0 16px 80px #211a1555;overscroll-behavior:contain}dialog::backdrop{background:#302c225e}article{padding:clamp(18px,3vw,38px)}.top{display:flex;align-items:center;justify-content:space-between}h2{font-size:32px}#close{background:none;border:1px solid #bdb39d;border-radius:30px;padding:5px 13px}.tabs{display:flex;gap:18px;margin:18px 0;border-bottom:1px solid #cfc3aa}.tabs button{border:0;background:none;padding:7px 0}.tabs button[aria-pressed=true]{color:#9b3925;border-bottom:2px solid}h3{font-size:23px;margin:18px 0 8px}li{margin:6px 0}blockquote{margin:12px 0 4px;font:20px/1.6 serif}small,.source{font-size:12px;color:#62594b}.routeRow{display:flex;gap:3px;align-items:stretch;margin:14px 0}.routeRow span{flex:1;padding:8px 2px;border-top:2px solid #955037;text-align:center;font-size:13px}.bars{display:grid;grid-template-columns:55px 1fr;gap:8px}.bars i{height:10px;display:block;background:#9b6549;margin:5px 0}.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}a{text-underline-offset:3px}details{margin:15px 0}details img{display:block;width:100%;max-height:50vh;object-fit:contain}.context{font-size:13px;margin-top:18px}.day{font-weight:bold;color:#823922}#hud{position:absolute;right:4vw;top:4vh;text-align:right;font-size:12px;text-shadow:0 0 5px #ffeac5}#hud svg{width:94px;display:block;margin-left:auto}
+@media(max-width:650px){#paper{height:min(62vh,75vw)}header{top:12%}footer{bottom:9%}footer input{width:46vw}.pair{grid-template-columns:1fr}#hud{top:5%}#rail{top:45%;height:13%}dialog{width:94vw}.routeRow span{font-size:11px}}
+
+#stage{display:block;touch-action:auto;background:#ded0aa}
+#travel{position:absolute;inset:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none;touch-action:pan-x}
+#travel::-webkit-scrollbar{display:none}
+#strip{display:flex;width:max-content;height:100%;align-items:stretch}
+#paper{width:max(165vw,240dvh);height:100%;flex:none;background-size:100% 100%;background-position:center}
+#historical{flex:none;width:100vw;height:100%;display:grid;grid-template-rows:minmax(0,1fr) auto;justify-items:center;gap:8px;margin:0;padding:clamp(95px,15dvh,150px) 20px 92px;background:radial-gradient(ellipse at center,#e5d4a9,#c3a675);scroll-margin:0}
+#historical img{height:100%;width:100%;min-height:0;object-fit:contain}
+#historical figcaption{font-size:12px;text-align:center}
+#kind{display:inline-block;margin-top:9px;padding:2px 7px;background:#f5e8c9e8;font-size:11px;border:1px solid #81664055}
+header p:not(#kind){width:max-content;background:#ebdabbc9;border-radius:2px}
+header,#hud,footer,#rail{z-index:1}
+header{top:4dvh}
+footer{align-items:center;background:#f3e6cbeb;padding:10px 13px;border-radius:4px;bottom:max(2.5%,env(safe-area-inset-bottom))}
+#rail{background:#ebdabbbe;border-radius:2px;height:22%}
+@media(max-width:650px){header h1{font-size:clamp(25px,7vw,38px)}#hud{display:none}#rail{height:14%;top:36%}footer{gap:8px}footer input{width:44vw}#details{padding:8px 10px}}
+
+body{background:#d6bb87;height:760vh;margin:0}body:has(dialog[open]){overflow:hidden}
+#stage{touch-action:pan-y}
+#travel{overflow:hidden;touch-action:pan-y}
+#strip{width:100%}
+#paper{width:max(205vw,300dvh);height:100dvh;will-change:transform}
+header{top:0;left:0;padding:clamp(18px,3vw,44px);width:min(100%,680px);background:radial-gradient(ellipse at top left,#f5e8cdfa 12%,#f5e8cdbd 40%,transparent 74%);padding-bottom:65px}
+header h1{font-size:clamp(30px,4.4vw,64px);margin:3px 0 9px}header p:not(#kind){background:none}
+#issue{font-size:clamp(17px,2vw,27px);font-weight:650}#date{font-size:13px}
+#rail{top:48%;height:19%;width:54px}#rail button{white-space:nowrap}
+footer{background:transparent;padding:0}footer>div{background:#f4e8cfed;border-radius:6px;padding:7px 12px}#kind{font-size:11px}
+#modal{margin:auto auto auto 0;border-radius:0 14px 14px 0;width:min(680px,94vw);max-height:94dvh}
+table{width:100%;border-collapse:collapse;margin:15px 0;text-align:left}td,th{padding:10px 4px;border-bottom:1px solid #d7cab2;font-size:clamp(11px,2vw,15px)}
+tr.active{background:#ede1c9}.bars i{width:100%}#content figure img{max-height:36vh;object-fit:contain;width:100%}
+@media(max-width:650px){header{top:0}footer{bottom:3%}#paper{width:300dvh}}
+#paper{width:100%;height:100%;background:#30291e;transform:none}#track{display:flex;align-items:center;gap:.55em;font-size:12px;color:#665543}#track span+span:before{content:"›";margin-right:.55em;color:#907e68}#track .here{font-weight:800;color:#822a19;text-decoration:underline;text-underline-offset:3px}
+header{width:max-content;max-width:100%;padding:18px 30px 26px 20px;background:linear-gradient(120deg,#f6ead4f5 35%,#f6ead4d4 76%,transparent);border-bottom-right-radius:3rem}
+header h1{font-size:clamp(26px,3.2vw,46px)}
+</style></head><body><main id="stage"><div id="travel"><div id="strip"><div id="paper"><canvas id="actors" aria-hidden="true"></canvas></div></div></div>
+<header><p>1795 · 을묘년 원행</p><h1>정조 화성행차</h1><p id="date"></p><p id="issue"></p><p id="kind">의궤 바탕 재구성</p></header>
+<nav id="rail" aria-label="장면으로 이동"><button id="first">출발</button><button id="last">도강</button><svg id="chair" aria-hidden="true" viewBox="0 0 40 30"><path fill="currentColor" d="M1 23h38v2H1zm7-4V12h24v9H8zM5 11q8-3 12-7h2V1h2v3h2q4 4 12 7l-2 2H7z"/><path fill="#ead5a8" d="M12 14h6v5h-6zm11 0h5v5h-5z"/></svg></nav><footer><div><div id="track" aria-label="오늘의 경유지"></div><label for="route">아래로 스크롤해 행차 따라가기 ↓</label><input type="range" id="route" min="0" max="10000" value="0" aria-label="창덕궁에서 노량까지 행차 진행 위치"></div><button id="details">← 상세보기</button></footer></main><dialog id="modal" aria-labelledby="mt"><article><div class="top"><h2 id="mt">상세보기</h2><button id="close">닫기 ×</button></div><nav class="tabs" aria-label="상세 자료"><button data-tab="daily">이날의 기록</button><button data-tab="compare">여정 비교</button><button data-tab="source">도판과 원문</button></nav><div id="content"></div></article></dialog>
+<script src="march.js?v=2"></script></body></html>
