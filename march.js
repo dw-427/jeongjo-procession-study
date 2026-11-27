@@ -3,22 +3,55 @@ const canvas=el('actors'), ctx=canvas.getContext('2d');
 const stops=[[0,'창덕궁을 나서다','창덕궁'],[.5,'배다리를 건너다','노량']];
 const clamp=v=>Math.max(0,Math.min(1,v));
 let size=[1,1],progress=0,day=0,tab='daily';
-const art={};
+const art={}, silhouettes=new Map();
+const tooltip=el('actor-info');
+const visibleActors=[];
+let pointer=null, pinned=false;
+const roles={
+ lead:['영기 기수','행렬 앞에서 지휘를 알리는 깃발을 든 인원.','경기감사 대열'],
+ governor:['경기감사','경기도의 관찰사. 반차도에서는 경기감사의 대열이 앞쪽에 놓입니다.','경기감사 대열'],
+ horseGuard:['별기대','훈련대장 소속 기마 대열. 기록에는 84명이 다섯 필씩 나란히 대열을 이루는 편제가 나옵니다.','훈련대장 대열'],
+ band:['취타대','행렬에서 관악기와 타악기를 연주한 악대입니다.','의장 대열'],
+ flag:['의장 기수','깃발을 들고 어가와 가교 앞을 따르는 의장 인원입니다.','의장 대열'],
+ royal:['어가 호위','임금의 행차 주변을 지키는 인원입니다.','어가 대열'],
+ litter:['혜경궁 홍씨의 가교','정조의 어머니 혜경궁 홍씨가 원행에 사용한 가마입니다.','자궁가교 대열'],
+ escort:['협연군','가마 양옆에 배치되는 호위 군사입니다.','자궁가교 대열'],
+ rear:['장용위','행렬 뒤쪽에 배치된 기마 대열. 반차도에는 96명의 편제가 기록됩니다.','장용대장 대열'],
+ official:['병조판서 대열','군정을 맡은 병조의 장관이 따르는 대열입니다.','후미 관원 대열']
+};
 function load(name,path){
- const img=new Image();art[name]=img;img.onload=draw;img.src='scenes/outward/'+path+'.webp';
+ const img=new Image();art[name]=img;img.onload=()=>{
+  if(path.startsWith('march/')){
+   const mask=document.createElement('canvas');
+   mask.width=img.naturalWidth;mask.height=img.naturalHeight;
+   const ink=mask.getContext('2d');ink.drawImage(img,0,0);
+   silhouettes.set(img,ink.getImageData(0,0,mask.width,mask.height).data);
+  }
+  draw();
+ };img.src='scenes/outward/'+path+'.webp';
 }
 for(const name of ['gate-street','bridge-street'])load(name,name);
 for(const name of ['step0','step1','step2','step3','music','horse','guard','litter'])load(name,'march/'+name);
-const files=['step','step','horse','music','music','step','guard','litter','guard','horse','step','step','step'];
+// Keep the documented order of the major groups in a condensed, legible procession.
+const files=[
+ ['step','lead',2],['horse','governor',1],
+ ['horse','horseGuard',3],['horse','horseGuard',3],
+ ['step','flag',2],['music','band',3],['guard','royal',2],
+ ['litter','litter',1],['guard','escort',2],
+ ['horse','rear',3],['horse','rear',3],['horse','official',1]
+];
 const formation=[];
 let tail=0;
-for(const [rank,type] of files.entries()){
- const lanes=type==='litter'?[0]:type==='horse'?[0]:[-1,1];
- for(const lane of lanes)formation.push({type,lane,offset:tail+(lane+1)*.003,seed:rank*.37+lane*.29});
- tail+=type==='litter'?.070:type==='horse'?.050:.032;
+for(const [rank,[type,role,count]] of files.entries()){
+ const lanes=count===1?[0]:count===2?[-1,1]:[-1,0,1];
+ for(const lane of lanes){
+  const offset=role==='escort'?tail-.052:tail+(lane+1)*.006;
+  formation.push({type,role,lane,offset,seed:rank*.37+lane*.29});
+ }
+ tail+=type==='litter'?.078:type==='horse'?.051:.034;
 }
 formation.sort((a,b)=>a.lane-b.lane);
-function paint(scene,t,opacity=1){
+function paint(scene,t,opacity=1,interactive=true){
  const bg=art[scene?'bridge-street':'gate-street'];
  if(!bg?.naturalWidth)return;
  const [w,h]=size;
@@ -30,7 +63,8 @@ function paint(scene,t,opacity=1){
  const finish=(w-left)/W+tail+.09;
  const head=start+(finish-start)*t;
  ctx.beginPath();ctx.rect(scene?0:left+.15*W,0,w,h);ctx.clip();
- for(const {type,lane,offset,seed} of formation){
+ for(const actor of formation){
+  const {type,lane,offset,seed}=actor;
   const x=head-offset;
   if(!scene&&x<start)continue;
   const depth=scene?1:clamp((x-.15)/.14);
@@ -44,17 +78,72 @@ function paint(scene,t,opacity=1){
   const px=left+x*W;
   if(px+width<w*-0.01||px-width>w)continue;
   const road=scene?.7-.236*x:.566+.074*clamp((x-.15)/.105)+.20*Math.max(0,x-.255);
-  const feet=top+H*(road+lane*.005)+height*.012*Math.abs(beat);
-  ctx.save();ctx.translate(px,feet);ctx.rotate(beat*(type==='horse'?.014:.009));
+  const feet=top+H*(road+lane*.011)+height*.012*Math.abs(beat);
+  const angle=beat*(type==='horse'?.014:.009);
+  if(interactive)visibleActors.push({actor,px,feet,width,height,img,angle,clip:scene?0:left+.15*W});
+  ctx.save();ctx.translate(px,feet);ctx.rotate(angle);
   ctx.drawImage(img,-width/2,-height,width,height);ctx.restore();
  }
  ctx.restore();
 }
 function draw(){
+ visibleActors.length=0;
  if(progress<=.47)paint(0,progress/.47);
  else if(progress>=.53)paint(1,(progress-.53)/.47);
- else{paint(0,1);const t=(progress-.47)/.06;paint(1,0,t*t*(3-2*t))}
+ else{paint(0,1,1,false);const t=(progress-.47)/.06;paint(1,0,t*t*(3-2*t),false)}
+ updateActorInfo();
 }
+function actorAt(x,y){
+ for(let i=visibleActors.length-1;i>=0;i--){
+  const sprite=visibleActors[i];
+  if(x<sprite.clip)continue;
+  const {px,feet,angle,width,height,img}=sprite;
+  const dx=x-px,dy=y-feet,c=Math.cos(angle),sn=Math.sin(angle);
+  const u=(dx*c+dy*sn)/width+.5,v=(-dx*sn+dy*c)/height+1;
+  if(u<0||u>=1||v<0||v>=1)continue;
+  const mask=silhouettes.get(img);
+  if(mask?.[(Math.floor(v*img.height)*img.width+Math.floor(u*img.width))*4+3]>80)return sprite;
+ }
+}
+function updateActorInfo(){
+ const sprite=pinned?visibleActors.find(({actor})=>actor===pinned):pointer&&actorAt(pointer.x,pointer.y);
+ const stage=el('stage');
+ stage.classList.toggle('over-actor',Boolean(sprite));
+ tooltip.hidden=!sprite;
+ if(!sprite){pinned=false;return}
+ const [title,detail,group]=roles[sprite.actor.role];
+ if(tooltip.dataset.role!==sprite.actor.role){
+  tooltip.querySelector('strong').textContent=title;
+  tooltip.querySelector('p').textContent=detail;
+  tooltip.querySelector('small').textContent='화성원행반차도 · '+group;
+  tooltip.dataset.role=sprite.actor.role;
+ }
+ const bounds=canvas.getBoundingClientRect();
+ const x=bounds.left+sprite.px,y=bounds.top+sprite.feet-sprite.height;
+ tooltip.style.left=Math.max(12,Math.min(innerWidth-tooltip.offsetWidth-12,x-tooltip.offsetWidth/2))+'px';
+ tooltip.style.top=(y>tooltip.offsetHeight+24?y-tooltip.offsetHeight-12:Math.min(innerHeight-tooltip.offsetHeight-12,y+sprite.height+12))+'px';
+}
+function point(event){
+ const rect=canvas.getBoundingClientRect();
+ return {x:event.clientX-rect.left,y:event.clientY-rect.top};
+}
+const actorStage=el('stage');
+actorStage.addEventListener('pointermove',event=>{
+ if(event.pointerType!=='mouse')return;
+ pointer=event.target.closest('header,footer,nav,button,input')?null:point(event);
+ updateActorInfo();
+});
+actorStage.addEventListener('pointerleave',()=>{pointer=null;updateActorInfo()});
+actorStage.addEventListener('click',event=>{
+ if(event.target.closest('header,footer,nav,button,input'))return;
+ const {x,y}=point(event);
+ const actor=actorAt(x,y)?.actor;
+ pinned=actor!==pinned&&actor||false;
+ updateActorInfo();
+});
+window.addEventListener('keydown',event=>{
+ if(event.key==='Escape'){pinned=false;pointer=null;updateActorInfo()}
+});
 function resize(){
  const r=canvas.getBoundingClientRect(),d=Math.min(devicePixelRatio,2);
  size=[r.width,r.height];canvas.width=Math.round(r.width*d);canvas.height=Math.round(r.height*d);ctx.setTransform(d,0,0,d,0,0);draw();
@@ -63,7 +152,7 @@ function updateJourney(){
  progress=clamp(scrollY/Math.max(1,document.documentElement.scrollHeight-innerHeight));
  const i=Number(progress>=.5),stop=stops[i];
  el('date').textContent='첫째 날 · 윤2월 9일 · '+stop[2];
- el('issue').textContent=stop[1];el('kind').textContent='행차 재구성';
+ el('issue').textContent=stop[1];el('kind').textContent='반차도 기반 재구성';
  el('route').value=Math.round(progress*10000);el('route').setAttribute('aria-valuetext',stop[2]);
  el('chair').style.top=(10+80*progress)+'%';
  if(!el('track').children.length)for(const label of ['창덕궁','노량 배다리']){
