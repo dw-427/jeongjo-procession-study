@@ -8,6 +8,11 @@ const tooltip=el('actor-info');
 const visibleActors=[];
 let pointer=null, pinned=false;
 const roles={
+ police:['군뢰·순시','경기감사 앞에서 질서 유지와 통행 통제를 맡은 인원입니다.','경기감사 대열'],
+ royalHorse:['어보마','왕의 인장을 운반하는 말입니다.','의장 대열'],
+ meal:['수라가자','수라를 운반하는 행렬 설비입니다.','자궁가교 앞 수행 대열'],
+ herald:['가후선전관','행차를 수행하며 왕명을 전달하는 무관입니다.','자궁가교 수행 대열'],
+ scribe:['주서·한림','행차를 수행하며 왕명과 국정 관련 기록을 남기는 관원입니다.','후미 관원 대열'],
  lead:['영기 기수','행렬 앞에서 지휘를 알리는 깃발을 든 인원.','경기감사 대열'],
  governor:['경기감사','경기도의 관찰사. 반차도에서는 경기감사의 대열이 앞쪽에 놓입니다.','경기감사 대열'],
  horseGuard:['별기대','훈련대장 소속 기마 대열. 기록에는 84명이 다섯 필씩 나란히 대열을 이루는 편제가 나옵니다.','훈련대장 대열'],
@@ -17,6 +22,13 @@ const roles={
  litter:['혜경궁 홍씨의 가교','정조의 어머니 혜경궁 홍씨가 원행에 사용한 가마입니다.','자궁가교 대열'],
  escort:['협연군','가마 양옆에 배치되는 호위 군사입니다.','자궁가교 대열'],
  rear:['장용위','행렬 뒤쪽에 배치된 기마 대열. 반차도에는 96명의 편제가 기록됩니다.','장용대장 대열'],
+ king:['정조 · 좌마','돈화문 출발은 기마 기록에 근거합니다.','자궁가교 뒤 어가 대열'],
+ minister:['총리대신','행차 준비와 운영을 총괄한 대신의 대열입니다.','선두 관원 대열'],
+ captain:['훈련대장 대열','별기대와 의장·취타 인원이 따르는 대열입니다.','훈련대장 대열'],
+ carriage:['정가교','왕의 가마. 반차도의 정가교와 정조가 탄 좌마는 별개의 위치입니다.','의장 대열'],
+ princess:['군주쌍교','정조의 누이인 두 군주를 모신 가마 대열입니다.','자궁가교 뒤 수행 대열'],
+ rearCaptain:['장용대장','장용위와 함께 행렬 후방에 배치된 대장입니다.','장용대장 대열'],
+ secretary:['도승지 대열','왕명 출납을 맡은 승정원 관원들의 대열입니다.','후미 관원 대열'],
  official:['병조판서 대열','군정을 맡은 병조의 장관이 따르는 대열입니다.','후미 관원 대열']
 };
 function load(name,path){
@@ -32,23 +44,30 @@ function load(name,path){
 }
 for(const name of ['gate-street','bridge-street'])load(name,name);
 for(const name of ['step0','step1','step2','step3','music','horse','guard','litter'])load(name,'march/'+name);
-// Keep the documented order of the major groups in a condensed, legible procession.
+// Counts and ranks are expanded only where the cited arrangement specifies them.
 const files=[
- ['step','lead',2],['horse','governor',1],
- ['horse','horseGuard',3],['horse','horseGuard',3],
- ['step','flag',2],['music','band',3],['guard','royal',2],
- ['litter','litter',1],['guard','escort',2],
- ['horse','rear',3],['horse','rear',3],['horse','official',1]
+ ['guard','police',2],['step','lead',2],['horse','governor',1],['horse','minister',1],
+ ['horse','horseGuard',84,5],['horse','captain',1],['step','flag',3],['music','band',3],
+ ['horse','royalHorse',1],['step','flag',3],['music','band',3],['guard','royal',2],
+ ['litter','carriage',1],['guard','meal',2],['guard','herald',2],
+ ['litter','litter',1],['guard','escort',2],['horse','king',1],
+ ['litter','princess',1],['litter','princess',1],
+ ['horse','rear',96,5],['step','flag',3],['music','band',3],['horse','rearCaptain',1],
+ ['guard','scribe',2],['horse','secretary',1],['horse','official',1]
 ];
 const formation=[];
 let tail=0;
-for(const [rank,[type,role,count]] of files.entries()){
- const lanes=count===1?[0]:count===2?[-1,1]:[-1,0,1];
- for(const lane of lanes){
-  const offset=role==='escort'?tail-.052:tail+(lane+1)*.006;
-  formation.push({type,role,lane,offset,seed:rank*.37+lane*.29});
+for(const [group,[type,role,total,formationWidth=total]] of files.entries()){
+ const stride=type==='litter'?.078:type==='horse'?.043:.034;
+ for(let first=0;first<total;first+=formationWidth){
+  const count=Math.min(formationWidth,total-first);
+  for(let place=0;place<count;place++){
+   const lane=place-(count-1)/2;
+   const offset=role==='escort'?tail-.052:tail+Math.abs(lane)*.003;
+   formation.push({type,role,lane,offset,seed:group*.37+(first+place)*.29});
+  }
+  tail+=stride;
  }
- tail+=type==='litter'?.078:type==='horse'?.051:.034;
 }
 formation.sort((a,b)=>a.lane-b.lane);
 function paint(scene,t,opacity=1,interactive=true){
@@ -91,6 +110,16 @@ function draw(){
  if(progress<=.47)paint(0,progress/.47);
  else if(progress>=.53)paint(1,(progress-.53)/.47);
  else{paint(0,1,1,false);const t=(progress-.47)/.06;paint(1,0,t*t*(3-2*t),false)}
+ for(const sprite of visibleActors){
+  const label=sprite.actor.role==='king'?'정조':sprite.actor.role==='litter'?'혜경궁 홍씨':null;
+  if(!label||sprite.px<Math.max(22,sprite.clip+15)||sprite.px>size[0]-22)continue;
+  const y=sprite.feet-sprite.height-8;
+  ctx.save();
+  ctx.font='bold 13px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  const width=ctx.measureText(label).width+14;
+  ctx.fillStyle='#392318';ctx.fillRect(sprite.px-width/2,y-10,width,20);
+  ctx.fillStyle='#fff3d9';ctx.fillText(label,sprite.px,y);ctx.restore();
+ }
  updateActorInfo();
 }
 function actorAt(x,y){
@@ -111,12 +140,17 @@ function updateActorInfo(){
  stage.classList.toggle('over-actor',Boolean(sprite));
  tooltip.hidden=!sprite;
  if(!sprite){pinned=false;return}
- const [title,detail,group]=roles[sprite.actor.role];
- if(tooltip.dataset.role!==sprite.actor.role){
+ const [title,description,group]=roles[sprite.actor.role];
+ const bridge=progress>=.53;
+ const detail=sprite.actor.role==='king'
+  ? (bridge?'첫날 배다리를 건너는 순간의 탑승 방식은 확인되지 않아 기마로 재구성했습니다.':'돈화문에서 말을 타고 출발했다는 기록에 근거했습니다.')+' 반차도에서는 정조의 자리를 좌마로 나타냅니다.'
+  : description;
+ const key=sprite.actor.role+'/'+bridge;
+ if(tooltip.dataset.role!==key){
   tooltip.querySelector('strong').textContent=title;
   tooltip.querySelector('p').textContent=detail;
   tooltip.querySelector('small').textContent='화성원행반차도 · '+group;
-  tooltip.dataset.role=sprite.actor.role;
+  tooltip.dataset.role=key;
  }
  const bounds=canvas.getBoundingClientRect();
  const x=bounds.left+sprite.px,y=bounds.top+sprite.feet-sprite.height;
@@ -152,7 +186,7 @@ function updateJourney(){
  progress=clamp(scrollY/Math.max(1,document.documentElement.scrollHeight-innerHeight));
  const i=Number(progress>=.5),stop=stops[i];
  el('date').textContent='첫째 날 · 윤2월 9일 · '+stop[2];
- el('issue').textContent=stop[1];el('kind').textContent='반차도 기반 재구성';
+ el('issue').textContent=stop[1];el('kind').textContent=i?'반차도 기반 · 도강 탑승 방식 재구성':'반차도 기반 · 기마 출궁 기록';
  el('route').value=Math.round(progress*10000);el('route').setAttribute('aria-valuetext',stop[2]);
  el('chair').style.top=(10+80*progress)+'%';
  if(!el('track').children.length)for(const label of ['창덕궁','노량 배다리']){
